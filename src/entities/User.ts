@@ -1,16 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { IsEmail, Length } from "class-validator";
+import { Entity as TOEntity, Column, Index, BeforeInsert, OneToMany } from "typeorm";
+import bcrypt from "bcrypt";
+import { Exclude } from "class-transformer";
 
-@Entity("users")
-export class User {
-    @PrimaryGeneratedColumn()
-    id: number;
+import Entity from "./Entity";
+import Post from "./Post";
+@TOEntity("users")
+export default class User extends Entity{
+    constructor(user: Partial<User>){
+        super()
+        Object.assign(this, user)
+    }
+    @Index()
+    @IsEmail()
+    @Column({unique: true})
+    email: string;
 
+    @Index()
+    @Length(3, 255)
+    @Column({unique: true})
+    username: string;
+
+    @Exclude()
+    @Length(6, 255)
     @Column()
-    firstName: string;
+    password: string;
 
-    @Column()
-    lastName: string;
+    @OneToMany(() => Post, post => post.user)
+    posts: Post[];
 
-    @Column()
-    age: number;
+
+    @BeforeInsert()
+    async hashPassword(){
+        this.password = await bcrypt.hash(this.password, 6)
+    }
+
 }
